@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+.vulcan-temp
 
 # debug
 npm-debug.log*
