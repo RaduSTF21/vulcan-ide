@@ -12,6 +12,21 @@ export default function Home() {
   const [aiFeedback, setAiFeedback] = useState("");
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [numberOfTests, setNumberOfTests] = useState(10);
+  const supportedLanguages : Record<string, string> = {
+    "sol": "solidity",
+    "js": "javascript",
+    "py": "python",
+    "java": "java",
+    "cs": "csharp",
+    "cpp": "cpp",
+    "go": "go",
+    "rb": "ruby",
+    "php": "php",
+    "vy": "vyper",
+    "rs": "rust",
+    "cairo": "cairo"
+
+  };
 
   const files = useVFSStore((state) => state.files);
   const activeFileId = useVFSStore((state) => state.activeFileId);
@@ -27,7 +42,9 @@ export default function Home() {
         name: file.name,
         path: `/${file.name}`,
         content,
-        language: file.name.endsWith(".sol") ? "solidity" : "plaintext",
+        language: supportedLanguages[file.name.split(".").pop() || ""] || "plaintext",
+        parentId: null,
+        type: "file"
       });
     });
 
@@ -52,28 +69,55 @@ export default function Home() {
         },
         body: JSON.stringify({ code: activeFile.content, numberOfTests }),
       });
+      if (!response.body) throw new Error("Nu am primit date de la server.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      const data = await response.json();
-      if (data.success) {
-        setTestResults(data.testResults || "Tests ran successfully, but no output was captured.");
-        setAiFeedback(data.aiFeedback || "No feedback generated.");
-        
-        if (data.generatedTests) {
-          addFile({
-            name: "GeneratedTests.t.sol",
-            path: "/GeneratedTests.t.sol",
-            content: data.generatedTests,
-            language: "solidity",
-          });
+      while(true){
+        const { done, value } = await reader.read();
+        if(done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+
+        buffer = lines.pop() || "";
+
+        for(const line of lines){
+          if (line.trim() === "") continue;
+          const data = JSON.parse(line);
+
+          setTestResults(data.message || "")
+
+          if(data.success === false){
+            setTestResults("Error:"+ data.message);
+            setIsLoading(false);
+            return;
+          }
+
+          if(data.step === 5 && data.success){
+            setTestResults(data.testResults || "Tests finnished but no output is available");
+            setAiFeedback(data.aiFeedback || "AI feedback is not available.");
+            if(data.generatedTests){
+              addFile({
+                name: "GeneratedTests.t.sol",
+                path: "/GeneratedTests.t.sol",
+                content: data.generatedTests,
+                language: "solidity",
+                parentId: null,
+                type: "file"
+              });
+            }
+
+          }
         }
-      } else {
-        setTestResults("An error occurred during verification: " + (data.message || "Unknown error"));
+
       }
     } catch (error) {
       setTestResults("An error occurred while communicating with the server: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }
+      
   };
 
   return (
@@ -156,7 +200,7 @@ export default function Home() {
                     <div className="flex-1 flex flex-col items-center justify-center bg-black rounded-md border border-gray-700 shadow-inner p-4">
                       <div className="animate-pulse flex flex-col items-center">
                         <span className="text-4xl mb-4">⏳</span>
-                        <p className="text-blue-400 font-bold">Analyzing the contract...</p>
+                        <p className="text-blue-400 font-bold">{testResults || "Analyzing the contract..."}</p>
                         <p className="text-gray-500 text-xs mt-2 text-center">
                           The AI is writing tests, and Docker is running them.<br/>
                           This process may take a few tens of seconds.
