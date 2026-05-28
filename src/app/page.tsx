@@ -84,8 +84,17 @@ export default function Home() {
 
         for(const line of lines){
           if (line.trim() === "") continue;
-          const data = JSON.parse(line);
-
+          let data;
+          try{
+            data = JSON.parse(line);
+          }
+          catch(error){
+            console.error("Failed to parse line as JSON:", line, error);
+            continue;
+          }
+          if(data.ping){
+            continue;
+          }
           setTestResults(data.message || "")
 
           if(data.success === false){
@@ -94,7 +103,7 @@ export default function Home() {
             return;
           }
 
-          if(data.step === 5 && data.success){
+          if(data.step === 4 && data.success){
             setTestResults(data.testResults || "Tests finnished but no output is available");
             setAiFeedback(data.aiFeedback || "AI feedback is not available.");
             if(data.generatedTests){
@@ -132,12 +141,10 @@ export default function Home() {
             </div>
           </Panel>
 
-          {/* Resize Handle */}
           {isPanelOpen && (
             <Separator className="w-1 bg-gray-300 dark:bg-gray-700 hover:bg-blue-500 transition-colors cursor-col-resize" />
           )}
 
-          {/* Vulcan AI Panel */}
           {isPanelOpen && (
             <Panel defaultSize={35} minSize={20} className="bg-gray-50 dark:bg-gray-900 border-l border-gray-300 dark:border-gray-700 overflow-y-auto">
               <div className="h-full p-4 flex flex-col gap-4 pt-16">
