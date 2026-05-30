@@ -92,7 +92,7 @@ async function runFoundryTests(projectDir: string, aiResponse: string) {
     const cleanAiResponse = aiResponse.replaceAll("```solidity", "").replaceAll("```", "").trim();
     await fs.writeFile(path.join(projectDir, "test", "GeneratedTests.t.sol"), cleanAiResponse);
 
-    const testCommand = `docker run --rm --entrypoint sh -v "${projectDir}:/workspace" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "forge test -vv"`;
+    const testCommand = `docker run --rm --entrypoint sh -u root -v "${projectDir}:/workspace" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "forge test -vv"`;
     console.log("[Testing] Running Foundry tests with command:", testCommand);
     try{
         const {stdout, stderr} = await execAsync(testCommand);
