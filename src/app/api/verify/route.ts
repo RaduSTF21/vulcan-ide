@@ -80,7 +80,7 @@ libs = ["lib"]`;
     await fs.writeFile(path.join(projectDir, "remappings.txt"), remapings);
 
     console.log("[Setup] Foundry project structure created. Installing dependencies...");
-    const installCommand = `docker run --rm --entrypoint sh -v "${projectDir}:/workspace" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "git init && forge install foundry-rs/forge-std --no-git && forge install OpenZeppelin/openzeppelin-contracts --no-git"`;
+    const installCommand = `docker run --rm --entrypoint sh -u root -v "${projectDir}:/workspace" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "git init && forge install foundry-rs/forge-std --no-git && forge install OpenZeppelin/openzeppelin-contracts --no-git"`;
     await execAsync(installCommand);
 
     console.log("[Setup] Dependencies installed successfully.");
