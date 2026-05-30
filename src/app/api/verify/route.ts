@@ -64,6 +64,8 @@ async function setupFoundryProject(solidityCode:string){
     const projectDir = path.join(os.homedir(), '.vulcan-temp', `vulcan-project-${uniqueId}`);
     
     console.log(`[Setup] Created unique project directory: ${projectDir}`);
+    await execAsync(`cp -a ${process.cwd()}/vulcan-template/. ${projectDir}/  && rm -rf ${projectDir}/src/* ${projectDir}/test/*`  )
+
     await fs.mkdir(path.join(projectDir, "src"), { recursive: true });
     await fs.mkdir(path.join(projectDir, 'test'), { recursive: true });
 
@@ -80,8 +82,7 @@ libs = ["lib"]`;
     await fs.writeFile(path.join(projectDir, "remappings.txt"), remapings);
 
     console.log("[Setup] Foundry project structure created. Installing dependencies...");
-    const installCommand = `docker run --rm --entrypoint sh -u root -v "${projectDir}:/workspace" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "git init && forge install foundry-rs/forge-std --no-git && forge install OpenZeppelin/openzeppelin-contracts --no-git"`;
-    await execAsync(installCommand);
+    
 
     console.log("[Setup] Dependencies installed successfully.");
     return projectDir;
@@ -92,7 +93,7 @@ async function runFoundryTests(projectDir: string, aiResponse: string) {
     const cleanAiResponse = aiResponse.replaceAll("```solidity", "").replaceAll("```", "").trim();
     await fs.writeFile(path.join(projectDir, "test", "GeneratedTests.t.sol"), cleanAiResponse);
 
-    const testCommand = `docker run --rm --entrypoint sh -u root -v "${projectDir}:/workspace" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "forge test -vv"`;
+    const testCommand = `docker run --rm --entrypoint sh -u root -v "${projectDir}:/workspace" -v "${os.homedir()}/.svm:/root/.svm" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "forge test -vv"`;
     console.log("[Testing] Running Foundry tests with command:", testCommand);
     try{
         const {stdout, stderr} = await execAsync(testCommand);
