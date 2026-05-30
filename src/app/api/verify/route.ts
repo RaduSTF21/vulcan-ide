@@ -269,8 +269,7 @@ export async function POST(request: Request) {
     }
 catch (generalError) {
     console.error("General error in stream", generalError);
-    sendUpdate({success: false, message: "An error occurred during the verification process."});
-    
+    sendUpdate({success: false, message: "Detailed error: " + (generalError as Error).message});    
 }
 finally {
     try{
