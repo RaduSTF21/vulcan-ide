@@ -278,7 +278,7 @@ export async function POST(request: Request) {
                 await fs.writeFile(path.join(folder, "FoundryReport.txt"), testOutput);
                 await fs.writeFile(path.join(folder, "AuditReport.md"), aiFeedback);
                 console.log("[Stream] AI feedback generation completed. Sending final results...");
-                sendUpdate({step:4, message:"AI feedback generation completed.", success: true,testOutput: testOutput ,aiFeedback: aiFeedback, generatedTests: tests, path: folder});
+                sendUpdate({step:4, message:"AI feedback generation completed.", success: true,testResults: testOutput ,aiFeedback: aiFeedback, generatedTests: tests, path: folder});
 
 
     }
