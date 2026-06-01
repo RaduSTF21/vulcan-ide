@@ -219,6 +219,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const solidityCode = body.code;
     const numberOfTests = body.numberOfTests || 10;
+    const generatedTests = body.generatedTests || "";
+    const useExistingTests = body.useExistingTests || false;
     const stream = new ReadableStream({
         async start(controller){
             let streamClosed = false;
@@ -257,7 +259,7 @@ export async function POST(request: Request) {
                 sendUpdate({step:1, message:"Received code and parameters. Preparing test environment and tests..."});
                 const [folder, tests] = await Promise.all([
                     setupFoundryProject(solidityCode),
-                    generateTestsWithApiKeys(solidityCode, numberOfTests)
+                    (useExistingTests && generatedTests) ? Promise.resolve(generatedTests) : generateTestsWithApiKeys(solidityCode, numberOfTests)
                 ])
                 console.log("Generated tests:", tests);
                 if (!tests) {

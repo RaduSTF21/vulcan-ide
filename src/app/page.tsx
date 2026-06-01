@@ -23,6 +23,7 @@ export default function Home() {
   const activeFileId = useVFSStore((state) => state.activeFileId);
   const addFile = useVFSStore((state) => state.addFile);
   const activeFile = Object.values(files).find((file) => file.id === activeFileId);
+  const generatedTests = Object.values(files).find((file) => file.name === "GeneratedTests.t.sol");
 
   useEffect(() => {
     const checkIfMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -48,7 +49,7 @@ export default function Home() {
     event.target.value = "";
   };
 
-  const handleVerify = async () => {
+  const handleVerify = async (useExistingTests: boolean) => {
     if (!activeFile) {
       alert("Please select or upload a Solidity contract first.");
       return;
@@ -63,7 +64,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code: activeFile.content, numberOfTests }),
+        body: JSON.stringify({ code: activeFile.content, numberOfTests, useExistingTests ,generatedTests: generatedTests?.content || ""}),
       });
       if (!response.body) throw new Error("Nu am primit date de la server.");
       const reader = response.body.getReader();
@@ -98,7 +99,6 @@ export default function Home() {
           }
 
           if(data.step === 4 && data.success){
-            // Am asigurat potrivirea cuvântului testResults conform backend-ului
             setTestResults(data.testResults || "Tests finished but no output is available");
             
             if(data.generatedTests){
@@ -187,14 +187,33 @@ export default function Home() {
                   <label className="text-sm font-medium" htmlFor="analyze-input">
                     2. Start automated analysis
                   </label>
+
                   <button
                     id="analyze-input"
-                    onClick={handleVerify}
+                    onClick={() => handleVerify(false)}
                     disabled={isLoading || !activeFile}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isLoading ? "Analyzing..." : "Analyze Contract"}
                   </button>
+                  {
+                    generatedTests &&  (
+                      <>
+                      <label className="text-sm font-medium mt-4" htmlFor="rerun-input">
+                        3. Rerun tests and analysis with the generated tests.
+                      </label>
+                      <button
+                        id="rerun-input"
+                        onClick={()=> handleVerify(true)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        disabled={isLoading}
+                        >
+                          Rerun with Generated Tests
+                        </button>
+                    </>
+                      )
+                    }
+                  
                 </div>
 
                 <div className="mt-4 flex-1 flex flex-col">
