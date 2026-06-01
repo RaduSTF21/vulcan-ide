@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { exec } from "node:child_process";
 import util from "node:util";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel} from "@google/genai";
 
 
 const apiKeys = [
@@ -45,12 +45,17 @@ async function generateTestsWithApiKeys(solidityCode: string, numberOfTests: num
             const aiClient = new GoogleGenAI({ apiKey: apiKeyToTry });
             const response = await aiClient.models.generateContent({
                 model: "gemini-3.5-flash",
-                contents: buildTestPrompt(solidityCode, numberOfTests)
+                contents: buildTestPrompt(solidityCode, numberOfTests),
+                config: {
+                    thinkingConfig: {
+                        thinkingLevel: ThinkingLevel.HIGH,
+                    },
+                },
             });
             console.log('[AI] Test generation successful with current API key.');
             return response.text;
         } catch (apiError) {
-            console.log(`Error with API key at index ${currentKeyIndex}. Trying the next one.`, apiError);
+            console.log(`Error with API key at index ${currentKeyIndex-1}. Trying the next one.`, apiError);
         }
         attempts += 1;
     }
