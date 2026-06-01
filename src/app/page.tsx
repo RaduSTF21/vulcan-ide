@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AppLayout } from "../components/AppLayout";
 import { Editor } from "../components/Editor";
 import { useVFSStore } from "../store/useVFSStore";
@@ -9,29 +9,27 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [testResults, setTestResults] = useState("");
-  const [aiFeedback, setAiFeedback] = useState("");
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [numberOfTests, setNumberOfTests] = useState(10);
+  
   const supportedLanguages : Record<string, string> = {
-    "sol": "solidity",
-    "js": "javascript",
-    "py": "python",
-    "java": "java",
-    "cs": "csharp",
-    "cpp": "cpp",
-    "go": "go",
-    "rb": "ruby",
-    "php": "php",
-    "vy": "vyper",
-    "rs": "rust",
-    "cairo": "cairo"
-
+    "sol": "solidity", "js": "javascript", "py": "python", "java": "java",
+    "cs": "csharp", "cpp": "cpp", "go": "go", "rb": "ruby",
+    "php": "php", "vy": "vyper", "rs": "rust", "cairo": "cairo"
   };
 
   const files = useVFSStore((state) => state.files);
   const activeFileId = useVFSStore((state) => state.activeFileId);
   const addFile = useVFSStore((state) => state.addFile);
   const activeFile = Object.values(files).find((file) => file.id === activeFileId);
+
+  useEffect(() => {
+    const checkIfMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,7 +45,6 @@ export default function Home() {
         type: "file"
       });
     });
-
     event.target.value = "";
   };
 
@@ -59,7 +56,6 @@ export default function Home() {
 
     setIsLoading(true);
     setTestResults("Analyzing code and running tests. Please wait...");
-    setAiFeedback("");
 
     try {
       const response = await fetch("/api/verify", {
@@ -85,16 +81,14 @@ export default function Home() {
         for(const line of lines){
           if (line.trim() === "") continue;
           let data;
-          try{
+          try {
             data = JSON.parse(line);
-          }
-          catch(error){
+          } catch(error){
             console.error("Failed to parse line as JSON:", line, error);
             continue;
           }
-          if(data.ping){
-            continue;
-          }
+          if(data.ping) continue;
+          
           setTestResults(data.message || "")
 
           if(data.success === false){
@@ -104,8 +98,9 @@ export default function Home() {
           }
 
           if(data.step === 4 && data.success){
-            setTestResults(data.testResults || "Tests finnished but no output is available");
-            setAiFeedback(data.aiFeedback || "AI feedback is not available.");
+            // Am asigurat potrivirea cuvântului testResults conform backend-ului
+            setTestResults(data.testResults || "Tests finished but no output is available");
+            
             if(data.generatedTests){
               addFile({
                 name: "GeneratedTests.t.sol",
@@ -116,24 +111,34 @@ export default function Home() {
                 type: "file"
               });
             }
-
+            if(data.aiFeedback){
+              addFile({
+                name: "AuditReport.md",
+                path: "/AuditReport.md",
+                content: data.aiFeedback,
+                language: "markdown",
+                parentId: null,
+                type: "file"
+              });
+            }
           }
         }
-
       }
     } catch (error) {
       setTestResults("An error occurred while communicating with the server: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }
-      
   };
 
   return (
     <AppLayout>
       <div className="flex h-full w-full relative overflow-hidden">
-        
-        <Group orientation="horizontal" className="h-full w-full">
+        <Group 
+          key={isMobile ? "mobile" : "desktop"} 
+          orientation={isMobile ? "vertical" : "horizontal"} 
+          className="h-full w-full"
+        >
           {/* Editor Panel */}
           <Panel defaultSize={isPanelOpen ? 65 : 100} minSize={30}>
             <div className="flex-1 flex flex-col h-full w-full">
@@ -191,14 +196,6 @@ export default function Home() {
                     {isLoading ? "Analyzing..." : "Analyze Contract"}
                   </button>
                 </div>
-
-                {/* AI Feedback Section */}
-                {aiFeedback && !isLoading && (
-                  <div className="mt-4 p-4 bg-blue-900/30 border border-blue-500/50 rounded-md">
-                    <h3 className="text-sm font-bold text-blue-400 mb-2">🤖 AI Security Analyst:</h3>
-                    <p className="text-sm text-gray-300 leading-relaxed">{aiFeedback}</p>
-                  </div>
-                )}
 
                 <div className="mt-4 flex-1 flex flex-col">
                   <div className="text-sm font-medium mb-2">Foundry report 📊:</div>

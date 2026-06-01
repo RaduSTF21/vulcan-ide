@@ -159,12 +159,17 @@ const command = `docker run --rm --entrypoint sh -v "${projectDir}:/workspace" -
     }
 }
 */
-async function generateFoundryFeedback(testOutput: string, solidityCode: string, generatedTests: string) {
+async function generateFoundryFeedback(testOutput: string, solidityCode: string, generatedTests: string, sendupdate: (data: Record<string, unknown>) => void) {
     if (!testOutput.trim()) {
         return "Could not generate analysis for the results.";
     }
 
-        const feedbackPrompt = `Act as an expert Smart Contract Security Auditor. Analyze the following context to provide a clear, concise, and friendly report (maximum 3-4 sentences) explaining to the user what vulnerabilities were found based on the failing tests. Do not use code block formatting.
+        const feedbackPrompt = `Act as an expert Smart Contract Security Auditor. Analyze the following context to provide a comprehensive, clear, and friendly report explaining what vulnerabilities were found based on the failing tests.
+
+Please structure your response as follows:
+1. Summary: A brief overview of the vulnerabilities found.
+2. Detailed Analysis: Explain each vulnerability and how the tests triggered them.
+3. Remediation & Code Examples: Provide actionable advice and write specific Solidity code snippets (using markdown code blocks) showing exactly how to fix the vulnerabilities in the target contract.
 
 Target Contract Code:
 ${solidityCode}
@@ -175,8 +180,7 @@ ${generatedTests}
 Foundry Terminal Output:
 ${testOutput}
 
-Based on the above, explain the vulnerabilities discovered and how the tests triggered them.`
-;
+Based on the above, provide your complete audit report.`;
 
     let attempts = 0;
     while (attempts < apiKeys.length) {
@@ -185,12 +189,18 @@ Based on the above, explain the vulnerabilities discovered and how the tests tri
         currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
         try {
             const feedbackClient = new GoogleGenAI({ apiKey: apiKeyToTry });
-            const feedbackResponse = await feedbackClient.models.generateContent({
+            const feedbackResponse = await feedbackClient.models.generateContentStream({
                 model: "gemini-3.5-flash",
                 contents: feedbackPrompt
             });
+            let fullFeedback = "";
+            for await (const chunk of feedbackResponse) {
+                const textChunk = chunk.text;
+                fullFeedback += textChunk;
+                sendupdate({feedbackChunk: textChunk});
+            }
             console.log('[AI Feedback] Feedback generation successful with current API key.');
-            const feedbackText = feedbackResponse.text;
+            const feedbackText = fullFeedback;
             return feedbackText ? feedbackText.trim() : "Could not generate analysis for the results.";
             
             
@@ -262,9 +272,11 @@ export async function POST(request: Request) {
                 console.log("[Stream] Test execution completed. Generating AI feedback...");
                 sendUpdate({step:3, message:"Tests execution completed. Generating AI feedback..."});
 
-                const aiFeedback = await generateFoundryFeedback(testOutput, solidityCode, tests);
+                const aiFeedback = await generateFoundryFeedback(testOutput, solidityCode, tests, sendUpdate);
+                await fs.writeFile(path.join(folder, "FoundryReport.txt"), testOutput);
+                await fs.writeFile(path.join(folder, "AuditReport.md"), aiFeedback);
                 console.log("[Stream] AI feedback generation completed. Sending final results...");
-                sendUpdate({step:4, message:"AI feedback generation completed.", success: true, testResults: testOutput, aiFeedback: aiFeedback, generatedTests: tests, path: folder});
+                sendUpdate({step:4, message:"AI feedback generation completed.", success: true,testOutput: testOutput ,aiFeedback: aiFeedback, generatedTests: tests, path: folder});
 
 
     }
