@@ -79,7 +79,7 @@ Open `http://localhost:3000`.
 4. Click **Analyze Contract**.
 5. Review:
    - generated tests (`GeneratedTests.t.sol`)
-   - foundry output report
+   - Foundry output report (`FoundryReport.txt`)
    - generated audit report (`AuditReport.md`)
 6. Optionally click **Rerun with Generated Tests**.
 
