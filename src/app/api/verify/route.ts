@@ -29,6 +29,12 @@ CRITICAL REQUIREMENTS:
    - The exact expected outcome if the contract's logic is perfectly sound, written exactly as: "// Expected result: [PASS]" or "// Expected result: [FAIL]".
 3. IMPORT PATH: Assume the target contract is saved as "src/TargetContract.sol". You MUST import it using this exact path in your test file (e.g., import { ContractName } from "../src/TargetContract.sol";).
 4. RAW OUTPUT: Return ONLY the raw contents of that test file. Do not add any extra text, explanations, or markdown code fences.
+5. STRICT LEGACY SYNTAX MODE: If the target contract uses an older Solidity version (e.g., 0.4.x or 0.5.x), you MUST strictly write the test code using the exact syntax valid for that specific era. Activate your knowledge of historical Solidity documentation. 
+   Examples of strict compliance: 
+   - Use parentheses for ether instantiation: "(new ContractName).value(amount)(args)". Do NOT use "new ContractName.value...".
+   - Use the exact "call", "send", or "transfer" semantics of that version.
+   - Do NOT use "constructor() { ... }" if the target uses function-name constructors. 
+   Do NOT mix modern 0.8.x Foundry idioms with legacy Solidity syntax, or the compiler will crash.
 
 Contract code:
 ${solidityCode}
