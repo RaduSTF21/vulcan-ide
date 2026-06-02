@@ -3,6 +3,8 @@
 Vulcan IDE is a browser-based smart contract security workspace built with Next.js.  
 It combines a Monaco-powered editor, a virtual file system, AI-generated Foundry tests, Dockerized test execution, and streamed audit feedback in a single UI.
 
+🌐 Live app: https://vulcan-ide.me/
+
 ## What it does
 
 - Edit contract and support files directly in the browser
