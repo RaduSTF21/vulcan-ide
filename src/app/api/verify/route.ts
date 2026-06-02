@@ -29,24 +29,20 @@ CRITICAL REQUIREMENTS:
    - The exact expected outcome if the contract's logic is perfectly sound, written exactly as: "// Expected result: [PASS]" or "// Expected result: [FAIL]".
 3. IMPORT PATH: Assume the target contract is saved as "src/TargetContract.sol". You MUST import it using this exact path in your test file (e.g., import { ContractName } from "../src/TargetContract.sol";).
 4. RAW OUTPUT: Return ONLY the raw contents of that test file. Do not add any extra text, explanations, or markdown code fences.
-5. STRICT LEGACY SYNTAX MODE: If the target contract uses an older Solidity version (e.g., 0.4.x or 0.5.x), you MUST strictly write the test code using the exact syntax valid for that specific era. Activate your knowledge of historical Solidity documentation. 
-   Examples of strict compliance: 
-   - Use parentheses for ether instantiation: "(new ContractName).value(amount)(args)". Do NOT use "new ContractName.value...".
-   - Use the exact "call", "send", or "transfer" semantics of that version.
-   - Do NOT use "constructor() { ... }" if the target uses function-name constructors. 
-   Do NOT mix modern 0.8.x Foundry idioms with legacy Solidity syntax, or the compiler will crash.
+5. STRICT LEGACY SYNTAX MODE: If the target contract uses a Solidity version strictly below 0.8.0 (e.g., 0.7.x, 0.6.x, 0.5.x, 0.4.x), you MUST strictly write the test code using the exact syntax valid for that specific era.
+CRITICAL IMPORT BAN: For ANY version below 0.8.0, you MUST NOT import "forge-std/Test.sol", console.sol, or any modern Foundry library! The compiler will crash due to version mismatch (forge-std requires >=0.8.13).
+Instead, you MUST manually define the necessary mock interfaces (like Hevm, Assert, or Vm) inside the test file and write raw testing logic, exactly as you would for 0.4.x contracts. Do not mix modern 0.8.x Foundry idioms with legacy Solidity syntax.
 
 Contract code:
 ${solidityCode}
 `;
 
 async function generateTestsWithApiKeys(solidityCode: string, numberOfTests: number) {
-    console.log("[AI] Generating ${numberOfTests} tests for the contract...");
+    console.log(`[AI] Generating ${numberOfTests} tests for the contract...`);
     let attempts = 0;
     while (attempts < apiKeys.length) {
         const apiKeyToTry = apiKeys[currentKeyIndex];
         console.log(`[AI] Attempting to generate tests using API key at index ${currentKeyIndex}...`);
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
         try {
             const aiClient = new GoogleGenAI({ apiKey: apiKeyToTry });
             const response = await aiClient.models.generateContent({
@@ -62,6 +58,8 @@ async function generateTestsWithApiKeys(solidityCode: string, numberOfTests: num
             return response.text;
         } catch (apiError) {
             console.log(`Error with API key at index ${currentKeyIndex-1}. Trying the next one.`, apiError);
+            currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
+
         }
         attempts += 1;
     }
@@ -197,7 +195,6 @@ Based on the above, provide your complete audit report.`;
     while (attempts < apiKeys.length) {
         const apiKeyToTry = apiKeys[currentKeyIndex];
         console.log(`[AI Feedback] Attempting to generate feedback using API key at index ${currentKeyIndex}...`);
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
         try {
             const feedbackClient = new GoogleGenAI({ apiKey: apiKeyToTry });
             const feedbackResponse = await feedbackClient.models.generateContentStream({
@@ -224,6 +221,8 @@ Based on the above, provide your complete audit report.`;
         }
         catch (feedbackError) {
             console.log(`Error with API key at index ${currentKeyIndex} while generating feedback. Trying the next one.`, feedbackError);
+            currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
+
         }
         attempts += 1;
     } 
