@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vulcan IDE
 
-## Getting Started
+Vulcan IDE is a browser-based smart contract security workspace built with Next.js.  
+It combines a Monaco-powered editor, a virtual file system, AI-generated Foundry tests, Dockerized test execution, and streamed audit feedback in a single UI.
 
-First, run the development server:
+🌐 Live app: https://vulcan-ide.me/
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## What it does
+
+- Edit contract and support files directly in the browser
+- Organize files/folders in a virtual project tree (drag/drop included)
+- Upload Solidity contracts for analysis
+- Generate security-focused Foundry tests with Gemini
+- Run tests in a Foundry Docker container
+- Stream terminal output and AI audit feedback back to the UI
+- Re-run analysis using previously generated tests
+
+## Tech stack
+
+- **Framework:** Next.js 16 (App Router), React 19, TypeScript
+- **UI:** Tailwind CSS, Monaco Editor, `react-resizable-panels`
+- **State:** Zustand (persisted virtual file system)
+- **AI:** `@google/genai` (Gemini models)
+- **Execution:** Foundry in Docker (`ghcr.io/foundry-rs/foundry:latest`)
+
+## Repository structure
+
+```text
+src/
+  app/
+    api/verify/route.ts      # AI generation + Foundry execution pipeline
+    page.tsx                 # Main IDE screen
+  components/
+    AppLayout.tsx            # Resizable shell + sidebar toggle
+    Sidebar.tsx              # Virtual file tree and file/folder actions
+    Editor.tsx               # Monaco editor binding
+  store/
+    useVFSStore.ts           # Zustand virtual file system store
+  types/
+    vfs.ts                   # Virtual file model
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prerequisites
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Node.js 20+ and npm
+- Docker (running locally)
+- Gemini API keys
+- A local Foundry template directory expected at:
+  - `vulcan-template/` in the repository root
+  - used by `/src/app/api/verify/route.ts` during project setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Create a `.env.local` file in the project root:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+GEMINI_API_KEY_1=your_key_here
+GEMINI_API_KEY_2=optional_fallback_key
+GEMINI_API_KEY_3=optional_fallback_key
+GEMINI_API_KEY_4=optional_fallback_key
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+At least one key is required; additional keys are used as automatic fallbacks if a request fails.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Getting started
 
-## Deploy on Vercel
+```bash
+npm install
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open `http://localhost:3000`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## How to use Vulcan IDE
+
+1. Open the app and create/upload a Solidity file (`.sol`).
+2. Click **Open Vulcan AI 🛡️**.
+3. Set the number of tests to generate.
+4. Click **Analyze Contract**.
+5. Review:
+   - generated tests (`GeneratedTests.t.sol`)
+   - Foundry output report (`FoundryReport.txt`)
+   - generated audit report (`AuditReport.md`)
+6. Optionally click **Rerun with Generated Tests**.
+
+## Available scripts
+
+- `npm run dev` – start development server
+- `npm run build` – build production bundle
+- `npm run start` – run production server
+- `npm run lint` – run ESLint
+
+## Notes
+
+- The `/api/verify` endpoint is `force-dynamic` and streams NDJSON updates.
+- Temporary Foundry workspaces are created under `~/.vulcan-temp` and old folders are cleaned up automatically.
+- Test execution depends on Docker volume access to the generated temp workspace and local `~/.svm`.
