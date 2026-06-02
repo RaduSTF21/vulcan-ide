@@ -17,18 +17,18 @@ let currentKeyIndex = 0;
 
 const execAsync = util.promisify(exec);
 
-const buildTestPrompt = (solidityCode: string, numberOfTests: number) => `Act as a professional Smart Contract Security Auditor. Analyze the following Solidity smart contract to validate its security posture. Look for potential vulnerabilities (Reentrancy, Access Control flaws, Delegatecall injections, Arithmetic overflows/underflows, State corruption, etc.). 
+const buildTestPrompt = (solidityCode: string, numberOfTests: number) => `Act as a Senior Smart Contract QA Engineer. Analyze the following Solidity smart contract to validate its core invariants, state consistency, and functional correctness. 
 
-Write ${numberOfTests} strict Foundry security validation tests (including negative tests) that rigorously check boundary conditions and unauthorized access attempts. If the contract contains vulnerabilities, your tests should demonstrate where the validation fails.
+Write ${numberOfTests} strict Foundry validation tests that rigorously check boundary conditions, state transitions, and role-based permissions. Focus on ensuring that all Web3 best practices are maintained. Use strict assertions (like assertEq, assertTrue, and vm.expectRevert) to prove that the contract state remains exactly as expected under all conditions. If the contract logic is flawed, your strict assertions must naturally fail.
 Place all ${numberOfTests} tests in a single test file.
 
 CRITICAL REQUIREMENTS:
 1. PRAGMA MATCHING: You MUST start your test file with the EXACT SAME "pragma solidity" version found in the target contract code below. Do not default to ^0.8.0 if the target contract uses an older version!
-2. Right above EVERY test function, you MUST add a comment block that includes:
-   - A brief explanation of what vulnerability or edge case the test validates.
-   - The exact expected outcome if the contract is strictly SECURE, written exactly as: "// Expected result: [PASS]" or "// Expected result: [FAIL]".
+2. COMMENT BLOCKS: Right above EVERY test function, you MUST add a comment block that includes:
+   - A brief explanation of the specific invariant, edge case, or role permission the test validates.
+   - The exact expected outcome if the contract's logic is perfectly sound, written exactly as: "// Expected result: [PASS]" or "// Expected result: [FAIL]".
 3. IMPORT PATH: Assume the target contract is saved as "src/TargetContract.sol". You MUST import it using this exact path in your test file (e.g., import { ContractName } from "../src/TargetContract.sol";).
-4. Return ONLY the raw contents of that test file. Do not add any extra text, explanations, or markdown code fences.
+4. RAW OUTPUT: Return ONLY the raw contents of that test file. Do not add any extra text, explanations, or markdown code fences.
 
 Contract code:
 ${solidityCode}
@@ -196,7 +196,13 @@ Based on the above, provide your complete audit report.`;
             const feedbackClient = new GoogleGenAI({ apiKey: apiKeyToTry });
             const feedbackResponse = await feedbackClient.models.generateContentStream({
                 model: "gemini-3.5-flash",
-                contents: feedbackPrompt
+                contents: feedbackPrompt,
+                config: {
+                    thinkingConfig: {
+                        thinkingLevel: ThinkingLevel.HIGH,
+                    },
+                },
+
             });
             let fullFeedback = "";
             for await (const chunk of feedbackResponse) {
