@@ -12,6 +12,7 @@ export default function Home() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [numberOfTests, setNumberOfTests] = useState(10);
+  const [executionTime, setExecutionTime] = useState<string | null>(null);
   
   const supportedLanguages : Record<string, string> = {
     "sol": "solidity", "js": "javascript", "py": "python", "java": "java",
@@ -50,6 +51,8 @@ export default function Home() {
   };
 
   const handleVerify = async (useExistingTests: boolean) => {
+    const startTime = performance.now();
+    setExecutionTime(null);
     if (!activeFile) {
       alert("Please select or upload a Solidity contract first.");
       return;
@@ -127,6 +130,10 @@ export default function Home() {
     } catch (error) {
       setTestResults("An error occurred while communicating with the server: " + (error instanceof Error ? error.message : String(error)));
     } finally {
+      const endTime = performance.now();
+      const duration = ((endTime - startTime) / 1000).toFixed(2);
+      setExecutionTime(duration + " seconds");
+
       setIsLoading(false);
     }
   };
@@ -217,7 +224,14 @@ export default function Home() {
                 </div>
 
                 <div className="mt-4 flex-1 flex flex-col">
-                  <div className="text-sm font-medium mb-2">Foundry report 📊:</div>
+                  <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <span>Foundry report 📊:</span>
+                        { executionTime && (
+                          <span className="text-xs text-gray-500 bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded-md">
+                            ⏱️ {executionTime}
+                          </span>
+                        )}
+                    </div>
                   
                   {isLoading ? (
                     <div className="flex-1 flex flex-col items-center justify-center bg-black rounded-md border border-gray-700 shadow-inner p-4">
