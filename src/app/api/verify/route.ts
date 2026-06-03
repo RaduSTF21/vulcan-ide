@@ -32,7 +32,8 @@ CRITICAL REQUIREMENTS:
 5. STRICT LEGACY SYNTAX MODE: If the target contract uses a Solidity version strictly below 0.8.0 (e.g., 0.7.x, 0.6.x, 0.5.x, 0.4.x), you MUST strictly write the test code using the exact syntax valid for that specific era.
 CRITICAL IMPORT BAN: For ANY version below 0.8.0, you MUST NOT import "forge-std/Test.sol", console.sol, or any modern Foundry library! The compiler will crash due to version mismatch (forge-std requires >=0.8.13).
 Instead, you MUST manually define the necessary mock interfaces (like Hevm, Assert, or Vm) inside the test file and write raw testing logic, exactly as you would for 0.4.x contracts. Do not mix modern 0.8.x Foundry idioms with legacy Solidity syntax.
-
+6. STRICT SYNTAX & DATA LOCATIONS: Act as a strict Solidity compiler before outputting the code. For older Solidity versions (especially < 0.8.0), you MUST explicitly declare the data location (memory or storage) for all complex types (strings, arrays, structs).
+CRITICAL WARNING: If a function returns a string or tuple in memory, your local receiving variables MUST include the memory keyword (e.g., use string memory myVar; instead of string myVar;). Never declare uninitialized storage pointers, as this will cause a fatal compiler error. Ensure perfect type matching when destructuring tuples.
 Contract code:
 ${solidityCode}
 `;
