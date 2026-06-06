@@ -15,7 +15,15 @@ const apiKeys = [
     process.env.GEMINI_API_KEY_5,
     process.env.GEMINI_API_KEY_6,
     process.env.GEMINI_API_KEY_7,
-    process.env.GEMINI_API_KEY_8
+    process.env.GEMINI_API_KEY_8,
+    process.env.GEMINI_API_KEY_9,
+    process.env.GEMINI_API_KEY_10,
+    process.env.GEMINI_API_KEY_11,
+    process.env.GEMINI_API_KEY_12,
+    process.env.GEMINI_API_KEY_13,
+    process.env.GEMINI_API_KEY_14,
+    process.env.GEMINI_API_KEY_15,
+    process.env.GEMINI_API_KEY_16
 ].filter(Boolean) as string[];
 let currentKeyIndex = 0;
 
