@@ -58,15 +58,29 @@ async function generateTestsWithApiKeys(solidityCode: string, numberOfTests: num
         console.log(`[AI] Attempting to generate tests using API key at index ${currentKeyIndex}...`);
         try {
             const aiClient = new GoogleGenAI({ apiKey: apiKeyToTry });
-            const response = await aiClient.models.generateContent({
-                model: "gemini-3.5-flash",
-                contents: buildTestPrompt(solidityCode, numberOfTests),
-                config: {
-                    thinkingConfig: {
-                        thinkingLevel: ThinkingLevel.HIGH,
+            let response;
+            try {
+                response = await aiClient.models.generateContent({
+                    model: "gemini-3.5-flash",
+                    contents: buildTestPrompt(solidityCode, numberOfTests),
+                    config: {
+                        thinkingConfig: {
+                            thinkingLevel: ThinkingLevel.HIGH,
                     },
                 },
-            });
+            });}
+            catch(highLevelError) {
+                console.log(`High thinking level failed with API key at index ${currentKeyIndex}. Retrying with default thinking level.`, highLevelError);
+                response = await aiClient.models.generateContent({
+                    model: "gemini-3.5-flash",
+                    contents: buildTestPrompt(solidityCode, numberOfTests),
+                    config: {
+                        thinkingConfig: {
+                            thinkingLevel: ThinkingLevel.THINKING_LEVEL_UNSPECIFIED,
+                        },
+                    },
+                });
+            }
             console.log('[AI] Test generation successful with current API key.');
             return response.text;
         } catch (apiError) {
@@ -136,51 +150,7 @@ async function runFoundryTests(projectDir: string, aiResponse: string) {
         return cleanOutput.trim() ? cleanOutput : "An error occurred while running the tests, and no output was captured.";
     }
 }
-/*
-async function createAndRunFoundryProject(solidityCode: string, aiResponse: string) {
-    const uniqueId = crypto.randomUUID();
-    const projectDir = path.join(os.homedir(), '.vulcan-temp', `vulcan-project-${uniqueId}`);
-    await fs.mkdir(path.join(projectDir, "src"), { recursive: true });
-    await fs.mkdir(path.join(projectDir, 'test'), { recursive: true });
 
-    await fs.writeFile(path.join(projectDir, "src", "TargetContract.sol"), solidityCode);
-    const cleanAiResponse = aiResponse.replaceAll("```solidity", "").replaceAll("```", "").trim();
-    await fs.writeFile(path.join(projectDir, "test", "GeneratedTests.t.sol"), cleanAiResponse);
-
-    const foundryConfig = `[profile.default]
-auto_detect_solc = true
-src = "src"
-out = "out"
-libs = ["lib"]`;
-
-    await fs.writeFile(path.join(projectDir, "foundry.toml"), foundryConfig);
-    const remapings = `forge-std/=lib/forge-std/\n@openzeppelin/=lib/openzeppelin-contracts/`;
-    await fs.writeFile(path.join(projectDir, "remappings.txt"), remapings);
-
-const command = `docker run --rm --entrypoint sh -v "${projectDir}:/workspace" -w /workspace ghcr.io/foundry-rs/foundry:latest -c "git init && forge install foundry-rs/forge-std --no-git && forge install OpenZeppelin/openzeppelin-contracts --no-git && forge test -vvv"`;
-
-    try {
-        const {stdout, stderr} = await execAsync(command);
-        return {
-            projectDir,
-            testOutput: stdout + (stderr ? "\nErrors:\n" + stderr : "")
-        };
-    } catch (dockerError: unknown) {
-        let out = "";
-        let err = "";
-        if (typeof dockerError === "object" && dockerError !== null) {
-            out = String((dockerError as { stdout?: string }).stdout ?? "");
-            err = String((dockerError as { stderr?: string }).stderr ?? "");
-        }
-
-        const testOutput = out + (err ? "\nErrors stderr:\n" + err : "");
-        return {
-            projectDir,
-            testOutput: testOutput.trim() ? testOutput : "An error occurred while running the tests, and no output was captured."
-        };
-    }
-}
-*/
 async function generateFoundryFeedback(testOutput: string, solidityCode: string, generatedTests: string, sendupdate: (data: Record<string, unknown>) => void) {
     if (!testOutput.trim()) {
         return "Could not generate analysis for the results.";
@@ -210,7 +180,8 @@ Based on the above, provide your complete audit report.`;
         console.log(`[AI Feedback] Attempting to generate feedback using API key at index ${currentKeyIndex}...`);
         try {
             const feedbackClient = new GoogleGenAI({ apiKey: apiKeyToTry });
-            const feedbackResponse = await feedbackClient.models.generateContentStream({
+            let feedbackResponse ;
+            try{ feedbackResponse = await feedbackClient.models.generateContentStream({
                 model: "gemini-3.5-flash",
                 contents: feedbackPrompt,
                 config: {
@@ -219,7 +190,19 @@ Based on the above, provide your complete audit report.`;
                     },
                 },
 
-            });
+            });}
+            catch(highLevelError) {
+                console.log(`High thinking level failed with API key at index ${currentKeyIndex} while generating feedback. Retrying with default thinking level.`, highLevelError);
+                feedbackResponse = await feedbackClient.models.generateContentStream({
+                model: "gemini-3.5-flash",
+                contents: feedbackPrompt,
+                config: {
+                    thinkingConfig: {
+                        thinkingLevel: ThinkingLevel.THINKING_LEVEL_UNSPECIFIED,
+                    },
+                },
+            })}
+            
             let fullFeedback = "";
             for await (const chunk of feedbackResponse) {
                 const textChunk = chunk.text;
