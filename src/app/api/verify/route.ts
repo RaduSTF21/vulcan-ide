@@ -46,6 +46,10 @@ CRITICAL IMPORT BAN: For ANY version below 0.8.0, you MUST NOT import "forge-std
 Instead, you MUST manually define the necessary mock interfaces (like Hevm, Assert, or Vm) inside the test file and write raw testing logic, exactly as you would for 0.4.x contracts. Do not mix modern 0.8.x Foundry idioms with legacy Solidity syntax.
 6. STRICT SYNTAX & DATA LOCATIONS: Act as a strict Solidity compiler before outputting the code. For older Solidity versions (especially < 0.8.0), you MUST explicitly declare the data location (memory or storage) for all complex types (strings, arrays, structs).
 CRITICAL WARNING: If a function returns a string or tuple in memory, your local receiving variables MUST include the memory keyword (e.g., use string memory myVar; instead of string myVar;). Never declare uninitialized storage pointers, as this will cause a fatal compiler error. Ensure perfect type matching when destructuring tuples.
+7. EVM & ARCHITECTURAL VULNERABILITIES: Do not just test happy paths or basic Solidity syntax. You MUST write tests that actively attempt to exploit low-level EVM mechanics. Explicitly include tests that target:
+   - Calldata manipulation and payload decoding (e.g., Short Address Attacks).
+   - Transaction Order Dependence (Front-Running / MEV) and race conditions.
+   - Reentrancy, unchecked low-level calls, and cross-contract state manipulation.
 Contract code:
 ${solidityCode}
 `;
@@ -162,6 +166,13 @@ Please structure your response as follows:
 1. Summary: A brief overview of the vulnerabilities found.
 2. Detailed Analysis: Explain each vulnerability and how the tests triggered them.
 3. Remediation & Code Examples: Provide actionable advice and write specific Solidity code snippets (using markdown code blocks) showing exactly how to fix the vulnerabilities in the target contract.
+CRITICAL ANALYSIS REQUIREMENTS:
+BEYOND SYNTAX: Do not just look for standard Solidity warnings. You MUST analyze the contract at the low-level EVM and architectural level. Actively investigate for:
+- Calldata manipulation and payload decoding issues (e.g., Short Address Attacks).
+- Transaction Order Dependence (Front-Running / MEV) and race conditions.
+- Low-level call vulnerabilities (unchecked return values, delegatecall risks).
+- Cross-contract state manipulation, Reentrancy, and logical flaws in token economics.
+If a vulnerability relies on EVM-specific behavior rather than pure Solidity syntax, you must highlight it.
 
 Target Contract Code:
 ${solidityCode}
