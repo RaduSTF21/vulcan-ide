@@ -84,7 +84,7 @@ async function generateTestsWithApiKeys(solidityCode: string, numberOfTests: num
             console.log('[AI] Test generation successful with current API key.');
             return response.text;
         } catch (apiError) {
-            console.log(`Error with API key at index ${currentKeyIndex-1}. Trying the next one.`, apiError);
+            console.log(`Error with API key at index ${currentKeyIndex}. Trying the next one.`, apiError);
             currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
 
         }
@@ -335,4 +335,3 @@ finally {
         },
     });
 }
-       
