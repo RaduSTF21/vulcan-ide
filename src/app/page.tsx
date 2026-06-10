@@ -146,7 +146,6 @@ export default function Home() {
           orientation={isMobile ? "vertical" : "horizontal"} 
           className="h-full w-full"
         >
-          {/* Editor Panel */}
           <Panel defaultSize={isPanelOpen ? 65 : 100} minSize={30}>
             <div className="flex-1 flex flex-col h-full w-full">
               <Editor />
@@ -154,12 +153,11 @@ export default function Home() {
           </Panel>
 
           {isPanelOpen && (
-            <Separator className="w-1 bg-gray-300 dark:bg-gray-700 hover:bg-blue-500 transition-colors cursor-col-resize" />
+            <Separator className="w-1 bg-gray-700 hover:bg-blue-500 transition-colors cursor-col-resize" />
           )}
 
           {isPanelOpen && (
-            <Panel defaultSize={35} minSize={20} className="bg-gray-50 dark:bg-gray-900 border-l border-gray-300 dark:border-gray-700 overflow-y-auto">
-              <div className="h-full p-4 flex flex-col gap-4 pt-16">
+          <Panel defaultSize={35} minSize={20} className="bg-gray-900 border-l border-gray-700 overflow-y-auto">              <div className="h-full p-4 flex flex-col gap-4 pt-16">
                 <h2 className="text-xl font-bold">Vulcan AI Security</h2>
 
                 <div className="flex flex-col gap-2">
@@ -186,7 +184,7 @@ export default function Home() {
                     max="50"
                     value={numberOfTests}
                     onChange={(e) => setNumberOfTests(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500"
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                 </div>
 
@@ -227,7 +225,7 @@ export default function Home() {
                   <div className="text-sm font-medium mb-2 flex items-center gap-2">
                     <span>Foundry report 📊:</span>
                         { executionTime && (
-                          <span className="text-xs text-gray-500 bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded-md">
+                          <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-md">
                             ⏱️ {executionTime}
                           </span>
                         )}
