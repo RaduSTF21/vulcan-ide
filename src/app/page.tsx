@@ -25,6 +25,8 @@ export default function Home() {
   const addFile = useVFSStore((state) => state.addFile);
   const activeFile = Object.values(files).find((file) => file.id === activeFileId);
   const generatedTests = Object.values(files).find((file) => file.name === "GeneratedTests.t.sol");
+  const isSolidityFile = activeFile?.language === "solidity" || activeFile?.name.endsWith(".sol") || false;
+  const canAnalyzeContract = Boolean(activeFile && isSolidityFile);
 
   useEffect(() => {
     const checkIfMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -53,7 +55,8 @@ export default function Home() {
   const handleVerify = async (useExistingTests: boolean) => {
     const startTime = performance.now();
     setExecutionTime(null);
-    if (!activeFile) {
+    const contractFile = activeFile;
+    if (!contractFile || !isSolidityFile) {
       alert("Please select or upload a Solidity contract first.");
       return;
     }
@@ -67,7 +70,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code: activeFile.content, numberOfTests, useExistingTests ,generatedTests: generatedTests?.content || ""}),
+        body: JSON.stringify({ code: contractFile.content, numberOfTests, useExistingTests ,generatedTests: generatedTests?.content || ""}),
       });
       if (!response.body) throw new Error("Nu am primit date de la server.");
       const reader = response.body.getReader();
@@ -196,13 +199,13 @@ export default function Home() {
                   <button
                     id="analyze-input"
                     onClick={() => handleVerify(false)}
-                    disabled={isLoading || !activeFile}
+                    disabled={isLoading || !canAnalyzeContract}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isLoading ? "Analyzing..." : "Analyze Contract"}
                   </button>
                   {
-                    generatedTests &&  (
+                    generatedTests && canAnalyzeContract && (
                       <>
                       <label className="text-sm font-medium mt-4" htmlFor="rerun-input">
                         3. Rerun tests and analysis with the generated tests.
